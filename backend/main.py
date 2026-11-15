@@ -62,16 +62,18 @@ def create_paquete(paquete: schemas.PaqueteCreate, db: Session = Depends(get_db)
 
 # Esquema rápido para actualizar el estado
 class PaqueteEstadoUpdate(BaseModel):
-    estado: str
+    estado: Optional[str] = None
+    ubicacion_estante: Optional[str] = None
 
-# 3. Actualizar estado del paquete (Entregar paquete)
 @app.patch("/api/v1/paquetes/{id_paquete}", response_model=schemas.PaqueteResponse, tags=["Paquetes"])
 def update_estado_paquete(id_paquete: int, payload: PaqueteEstadoUpdate, db: Session = Depends(get_db)):
     paquete = db.query(models.Paquete).filter(models.Paquete.id_paquete == id_paquete).first()
     if not paquete:
         raise HTTPException(status_code=404, detail="Paquete no encontrado")
-    
-    paquete.estado = payload.estado
+    if payload.estado is not None:
+        paquete.estado = payload.estado
+    if payload.ubicacion_estante is not None:
+        paquete.ubicacion_estante = payload.ubicacion_estante
     db.commit()
     db.refresh(paquete)
     return paquete

@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://backend-paqueteria.onrender.com/api/v1/paquetes';
 
@@ -33,4 +33,9 @@ export const entregarPaquete = async (idPaquete) => {
   }
 };
 
+
+export const moverPaqueteEstante = async (idPaquete, nuevoEstante) => {
+  const response = await api.patch(`/${idPaquete}`, { ubicacion_estante: nuevoEstante });
+  return response.data;
+};
 export default api;

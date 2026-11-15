@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect } from 'react';
+import ModalPersonal from './ModalPersonal';
+import React, { useState, useEffect } from 'react';
 import { obtenerPaquetes, crearPaquete, entregarPaquete } from '../services/api';
 import CajaInteractiva3D from './CajaInteractiva3D';
 import { PackageCheck, PlusCircle, RefreshCw, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -23,6 +24,55 @@ export default function PanelCustodia({ onVolverAlmacen }) {
     fecha_limite: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
   });
 
+    const [modalPersonalAbierto, setModalPersonalAbierto] = useState(false);
+  const [personal, setPersonal] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pudo_personal') || '[]'); } catch { return []; }
+  });
+  const [operadorActivoId, setOperadorActivoId] = useState(() => localStorage.getItem('pudo_operador_activo') || '');
+  const operadorActivo = personal.find((p) => p.id === operadorActivoId) || null;
+
+    const calcularSiguientesCodigos = (listaPaquetes) => {
+    let maxTrk = 0;
+    let maxToken = 0;
+
+    (listaPaquetes || []).forEach((p) => {
+      // Buscar correlativo TRK-BO-XXX (ignorando códigos antiguos de 4 dígitos si quieres empezar desde 001, o tomándolos en cuenta)
+      const matchTrk = String(p.codigo_rastreo || '').match(/^TRK-BO-(\d{1,3})$/i);
+      if (matchTrk) {
+        const num = parseInt(matchTrk[1], 10);
+        if (num > maxTrk) maxTrk = num;
+      }
+
+      // Buscar token numérico de 4 dígitos (0001 - 0999)
+      const matchTok = String(p.token_retiro || '').match(/^(\d{4})$/);
+      if (matchTok) {
+        const numTok = parseInt(matchTok[1], 10);
+        if (numTok < 1000 && numTok > maxToken) maxToken = numTok;
+      }
+    });
+
+    const siguienteTrk = `TRK-BO-${String(maxTrk + 1).padStart(3, '0')}`;
+    const siguienteToken = String(maxToken + 1).padStart(4, '0');
+    return { siguienteTrk, siguienteToken };
+  };
+
+    const CAPACIDAD_MAX_ESTANTE = 6;
+  const LISTA_ESTANTES = ['E-01', 'E-02', 'E-03'];
+
+  const ocupacionPorEstante = LISTA_ESTANTES.reduce((acc, est) => {
+    acc[est] = (paquetes || []).filter(
+      (p) =>
+        (p.estado || '').toUpperCase() !== 'ENTREGADO' &&
+        (p.ubicacion_estante || 'E-01').toUpperCase() === est
+    ).length;
+    return acc;
+  }, {});
+
+  const estanteActual = (formulario.ubicacion_estante || 'E-01').toUpperCase();
+  const estanteLleno = (ocupacionPorEstante[estanteActual] || 0) >= CAPACIDAD_MAX_ESTANTE;
+  const estanteSugerido =
+    LISTA_ESTANTES.find((est) => (ocupacionPorEstante[est] || 0) < CAPACIDAD_MAX_ESTANTE) || null;
+
   const cargarDatos = async () => {
     setCargando(true);
     setErrorApi('');
@@ -39,6 +89,28 @@ export default function PanelCustodia({ onVolverAlmacen }) {
       setCargando(false);
     }
   };
+
+      useEffect(() => {
+    const { siguienteTrk, siguienteToken } = calcularSiguientesCodigos(paquetes);
+    setFormulario((prev) => {
+      const actual = (prev.ubicacion_estante || 'E-01').toUpperCase();
+      const cantActual = (paquetes || []).filter(
+        (p) => (p.estado || '').toUpperCase() !== 'ENTREGADO' && (p.ubicacion_estante || 'E-01').toUpperCase() === actual
+      ).length;
+      const libre = ['E-01', 'E-02', 'E-03'].find(
+        (est) =>
+          (paquetes || []).filter(
+            (p) => (p.estado || '').toUpperCase() !== 'ENTREGADO' && (p.ubicacion_estante || 'E-01').toUpperCase() === est
+          ).length < 6
+      );
+      return {
+        ...prev,
+        codigo_rastreo: siguienteTrk,
+        token_retiro: siguienteToken,
+        ubicacion_estante: cantActual >= 6 && libre ? libre : prev.ubicacion_estante,
+      };
+    });
+  }, [paquetes]);
 
   useEffect(() => {
     cargarDatos();
@@ -89,7 +161,39 @@ export default function PanelCustodia({ onVolverAlmacen }) {
     }
   };
 
-  return (
+    return (
+    <div className="relative">
+      {/* Barra de control de Personal en Turno (PIN Dueño) */}
+      <div className="bg-slate-900/95 border-b border-slate-800 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span className="text-slate-400">Atendiendo en turno:</span>
+          {operadorActivo ? (
+            <span className="font-semibold text-emerald-300">
+              [{operadorActivo.codigo}] {operadorActivo.nombre} <span className="text-xs text-slate-400">({operadorActivo.turno})</span>
+            </span>
+          ) : (
+            <span className="text-amber-300 font-medium">Sin encargado asignado</span>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setModalPersonalAbierto(true)}
+          className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 font-semibold text-xs transition cursor-pointer"
+        >
+          🔐 Personal en Turno (PIN Dueño)
+        </button>
+      </div>
+
+      <ModalPersonal
+        abierto={modalPersonalAbierto}
+        onCerrar={() => setModalPersonalAbierto(false)}
+        personal={personal}
+        setPersonal={setPersonal}
+        activoId={operadorActivoId}
+        setActivoId={setOperadorActivoId}
+      />
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
@@ -143,7 +247,7 @@ export default function PanelCustodia({ onVolverAlmacen }) {
                   onChange={handleChange}
                   placeholder="TRK-BO-4001"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm"
-                />
+                 readOnly className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sky-400 font-mono font-semibold cursor-not-allowed select-all" />
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Token Retiro *</label>
@@ -154,17 +258,22 @@ export default function PanelCustodia({ onVolverAlmacen }) {
                   onChange={handleChange}
                   placeholder="8492"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm"
-                />
+                 readOnly className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-2.5 text-emerald-400 font-mono font-semibold cursor-not-allowed select-all" />
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">ID Vendedor *</label>
                 <input
-                  required
-                  type="number"
+                  type="text"
                   name="id_vendedor"
-                  value={formulario.id_vendedor}
+                  value={operadorActivo ? operadorActivo.codigo : formulario.id_vendedor}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm"
+                  readOnly={Boolean(operadorActivo)}
+                  title={operadorActivo ? 'Bloqueado: Turno habilitado por el dueño' : 'ID numérico del vendedor'}
+                  className={`w-full border rounded-xl px-4 py-2.5 font-mono font-semibold ${
+                    operadorActivo
+                      ? 'bg-slate-950/60 border-amber-500/50 text-amber-300 cursor-not-allowed'
+                      : 'bg-slate-950 border-slate-700 text-white'
+                  }`}
                 />
               </div>
             </div>
@@ -364,5 +473,6 @@ export default function PanelCustodia({ onVolverAlmacen }) {
         </div>
       </div>
     </div>
+      </div>
   );
 }

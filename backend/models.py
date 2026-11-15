@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, BigInteger, String, Numeric, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, BigInteger, String, Numeric, DateTime, ForeignKey, Text, Boolean
 from sqlalchemy.sql import func
 from database import Base
 
@@ -30,6 +30,16 @@ class Paquete(Base):
     fecha_limite = Column(DateTime(timezone=True), nullable=False)
     estado = Column(String(20), default="EN_CUSTODIA", nullable=False)
 
+    # Columnas sincronizadas en Supabase
+    recibido_por = Column(String(50), nullable=True)
+    entregado_por = Column(String(50), nullable=True)
+    fecha_recepcion = Column(DateTime(timezone=True), server_default=func.now())
+    fecha_entrega = Column(DateTime(timezone=True), nullable=True)
+    remitente_nombre = Column(String(120), nullable=True)
+    remitente_telefono = Column(String(30), nullable=True)
+    foto_paquete = Column(Text, nullable=True)
+    slot_3d = Column(Integer, nullable=True)
+
 class EntregaPago(Base):
     __tablename__ = "entregas_pagos"
 
@@ -41,3 +51,14 @@ class EntregaPago(Base):
     total_cobrado = Column(Numeric(10, 2), nullable=False)
     metodo_pago = Column(String(20), default="EFECTIVO", nullable=False)
     fecha_entrega = Column(DateTime(timezone=True), server_default=func.now())
+
+class PersonalPudo(Base):
+    __tablename__ = "personal_pudo"
+
+    id = Column(Integer, primary_key=True, index=True)
+    codigo = Column(String(30), unique=True, nullable=False)
+    nombre = Column(String(120), nullable=False)
+    telefono = Column(String(30), nullable=True)
+    turno = Column(String(80), default="Mañana (08:00 - 14:00)")
+    activo = Column(Boolean, default=False)
+    creado_en = Column(DateTime(timezone=True), server_default=func.now())

@@ -21,7 +21,6 @@ export default function App() {
   }, [vistaPanel]);
 
   const manejarMoverPaquete = async (idPaquete, nuevoEstante) => {
-    // Actualización optimista inmediata en pantalla
     setPaquetes((prev) =>
       prev.map((p) =>
         p.id_paquete === idPaquete ? { ...p, ubicacion_estante: nuevoEstante } : p
@@ -41,7 +40,9 @@ export default function App() {
   return vistaPanel ? (
     <PanelCustodia
       paquetesIniciales={paquetes}
+      onVolverAlmacen={() => setVistaPanel(false)}
       onVolver={() => setVistaPanel(false)}
+      onVolver3D={() => setVistaPanel(false)}
       onBack={() => setVistaPanel(false)}
     />
   ) : (

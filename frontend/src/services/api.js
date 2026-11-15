@@ -1,41 +1,70 @@
-import axios from 'axios';
+const RAW_API = import.meta.env.VITE_API_URL || 'https://backend-paqueteria.onrender.com';
+const API_BASE = RAW_API.replace(/\/api\/v1.*$/i, '').replace(/\/$/, '');
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://backend-paqueteria.onrender.com/api/v1/paquetes';
-
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 15000,
-});
-
-export const obtenerPaquetes = async () => {
-  const response = await api.get('/');
-  return response.data;
-};
-
-export const crearPaquete = async (datosPaquete) => {
-  const response = await api.post('/', datosPaquete);
-  return response.data;
-};
-
-export const entregarPaquete = async (idPaquete) => {
-  try {
-    const response = await api.patch(`/${idPaquete}`, { estado: 'ENTREGADO' });
-    return response.data;
-  } catch (error) {
-    if (error.response && error.response.status === 405) {
-      const responsePut = await api.put(`/${idPaquete}`, { estado: 'ENTREGADO' });
-      return responsePut.data;
-    }
-    throw error;
+async function request(path, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    ...options,
+  });
+  if (!res.ok) {
+    const detalle = await res.text().catch(() => '');
+    throw new Error(detalle || `Error HTTP ${res.status}`);
   }
-};
+  return res.json();
+}
 
+export function obtenerPaquetes() {
+  return request('/api/v1/paquetes');
+}
 
-export const moverPaqueteEstante = async (idPaquete, nuevoEstante) => {
-  const response = await api.patch(`/${idPaquete}`, { ubicacion_estante: nuevoEstante });
-  return response.data;
-};
-export default api;
+export function crearPaquete(payload) {
+  return request('/api/v1/paquetes', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function actualizarPaquete(idPaquete, datos) {
+  return request(`/api/v1/paquetes/${idPaquete}`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
+  });
+}
+
+export function moverPaqueteEstante(idPaquete, nuevoEstante, slot3d = null) {
+  return actualizarPaquete(idPaquete, {
+    ubicacion_estante: nuevoEstante,
+    ...(slot3d !== null ? { slot_3d: slot3d } : {}),
+  });
+}
+
+export function entregarPaquete(idPaquete, entregadoPor = null) {
+  return actualizarPaquete(idPaquete, {
+    estado: 'ENTREGADO',
+    ...(entregadoPor ? { entregado_por: entregadoPor } : {}),
+  });
+}
+
+// --- Personal en Turno (Supabase) ---
+export function obtenerPersonal() {
+  return request('/api/v1/personal');
+}
+
+export function crearPersonal(payload) {
+  return request('/api/v1/personal', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function activarPersonal(idPersonal) {
+  return request(`/api/v1/personal/${idPersonal}/activar`, {
+    method: 'PATCH',
+  });
+}
+
+export function eliminarPersonal(idPersonal) {
+  return request(`/api/v1/personal/${idPersonal}`, {
+    method: 'DELETE',
+  });
+}

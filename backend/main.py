@@ -62,6 +62,7 @@ class PaqueteEstadoUpdate(BaseModel):
     ubicacion_estante: Optional[str] = None
     slot_3d: Optional[int] = None
     entregado_por: Optional[str] = None
+    foto_paquete: Optional[str] = None
 
 @app.patch("/api/v1/paquetes/{id_paquete}", response_model=schemas.PaqueteResponse, tags=["Paquetes"])
 def update_estado_paquete(id_paquete: int, payload: PaqueteEstadoUpdate, db: Session = Depends(get_db)):
@@ -82,6 +83,8 @@ def update_estado_paquete(id_paquete: int, payload: PaqueteEstadoUpdate, db: Ses
 
     if payload.entregado_por is not None:
         paquete.entregado_por = payload.entregado_por
+    if payload.foto_paquete is not None:
+        paquete.foto_paquete = payload.foto_paquete
 
     db.commit()
     db.refresh(paquete)

@@ -1608,7 +1608,7 @@ export default function PanelCustodia({
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
-            {paquetes.some((p) => (p.estado || '').toUpperCase() === 'ENTREGADO') && (
+            {paquetes.some((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO')) && (
               <button
                 type="button"
                 onClick={respaldarYLimpiarEntregados}

@@ -127,9 +127,10 @@ def delete_personal(id_personal: int, db: Session = Depends(get_db)):
     db.delete(persona)
     db.commit()
     return {"ok": True}
-@app.delete("/api/v1/paquetes/entregados")
+
+@app.delete("/api/v1/paquetes/entregados", tags=["Paquetes"])
 def limpiar_paquetes_entregados(db: Session = Depends(get_db)):
-    entregados = db.query(PaqueteDB).filter(PaqueteDB.estado == "ENTREGADO").all()
+    entregados = db.query(models.Paquete).filter(models.Paquete.estado.ilike("%ENTREGADO%")).all()
     if not entregados:
         raise HTTPException(status_code=404, detail="No hay paquetes entregados para limpiar")
     

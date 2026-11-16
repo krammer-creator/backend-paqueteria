@@ -117,6 +117,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   <th>Rastreo / Token</th>
                   <th>Comprador (Destinatario)</th>
                   <th>Vendedor / Remitente</th>
+                  <th>Atendido por (Operador)</th>
                   <th>Estante / Slot</th>
                   <th>Horarios (Recepción / Entrega)</th>
                   <th>Estado</th>
@@ -128,8 +129,12 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   const foto = p.foto_paquete || loc.fotoPaquete || '';
                   const fechaRec = p.fecha_recepcion || p.fecha_ingreso || loc.fechaRecepcion || '---';
                   const fechaEnt = p.fecha_entrega || loc.fechaEntrega || 'Registrada';
-                  const vendedorInfo = p.id_vendedor ? `ID: ${p.id_vendedor}` : (p.remitente_nombre || '---');
                   
+                  const nombreVend = p.remitente_nombre || '---';
+                  const telVend = p.remitente_telefono ? `Tel: ${p.remitente_telefono}` : '';
+                  const idVend = `ID Vendedor: ${p.id_vendedor || 1}`;
+                  const operadorRecibe = p.recibido_por || loc.recibidoPor || 'DUEÑO';
+
                   return `
                     <tr>
                       <td style="text-align: center;">
@@ -145,8 +150,12 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                         Tel: ${p.destinatario_telefono || '---'}
                       </td>
                       <td>
-                        ${vendedorInfo}<br/>
-                        <span style="color:#666;font-size:10px;">${p.remitente_telefono || ''}</span>
+                        <strong>${nombreVend}</strong><br/>
+                        <span style="color:#666;font-size:10px;">${idVend}</span><br/>
+                        <span style="color:#666;font-size:10px;">${telVend}</span>
+                      </td>
+                      <td>
+                        <span style="font-weight:bold; color:#0369a1;">${operadorRecibe}</span>
                       </td>
                       <td>
                         <span style="font-family:monospace;font-weight:bold;">${p.ubicacion_estante || 'E-01'}</span>

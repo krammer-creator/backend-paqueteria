@@ -199,7 +199,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
     }
   }
 
-  // Botón 2: Borra definitivamente los entregados de Supabase mediante petición DELETE real
+  // Botón 2: Llama correctamente al endpoint agrupado de FastAPI para borrar los entregados
   const limpiarPaquetesEntregadosSupabase = async () => {
     const entregados = paquetes.filter((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO'));
     if (entregados.length === 0) {
@@ -213,23 +213,21 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
     setCargando(true);
     setErrorApi('');
     try {
-      await Promise.all(
-        entregados.map((p) => {
-          const id = p.id_paquete || p.id;
-          return fetch(`https://backend-paqueteria.onrender.com/paquetes/${id}`, {
-            method: 'DELETE',
-          }).then(res => {
-            if (!res.ok) throw new Error('Error al eliminar');
-            return res.json().catch(() => {});
-          });
-        })
-      );
+      const res = await fetch('https://backend-paqueteria.onrender.com/api/v1/paquetes/entregados', {
+        method: 'DELETE',
+      });
 
-      setMensajeOk(`Se han eliminado ${entregados.length} paquetes entregados de Supabase con éxito.`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Error al limpiar paquetes entregados');
+      }
+
+      const data = await res.json();
+      setMensajeOk(data.message || 'Paquetes entregados eliminados con éxito.');
       await cargarDatos();
     } catch (err) {
       console.error(err);
-      setErrorApi('No se pudieron eliminar los paquetes de la base de datos. Verifica la conexión con la API.');
+      setErrorApi(err.message || 'No se pudieron eliminar los paquetes de la base de datos.');
     } finally {
       setCargando(false);
     }

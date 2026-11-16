@@ -167,9 +167,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   const fechaRec = formatearFecha(p.fecha_recepcion || p.fecha_ingreso || loc.fechaRecepcion || '---');
                   const fechaEnt = formatearFecha(p.fecha_entrega || loc.fechaEntrega || 'Registrada');
                   
-                  const nombreVend = p.remitente_nombre || loc.remitenteNombre || '---';
-                  const ciVend = p.remitente_ci || loc.remitenteCi || '---';
-                  const telVend = p.remitente_telefono || loc.remitenteTelefono || '---';
+                  const nombreVend = p.remitente_nombre || p.vendedor_nombre || loc.remitenteNombre || '---';
+                  const ciVend = p.remitente_ci || p.vendedor_ci || loc.remitenteCi || '---';
+                  const telVend = p.remitente_telefono || p.vendedor_telefono || loc.remitenteTelefono || '---';
 
                   const opRecibe = p.recibido_por || loc.recibidoPor || 'DUEÑO';
                   const opEntrega = p.entregado_por || loc.entregadoPor || 'DUEÑO';
@@ -466,6 +466,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
       const telRemLimpio = String(formulario.remitente_telefono || '').replace(/\D/g, '');
       const codigoOperador = operadorActivo?.codigo || 'DUEÑO';
+      const ciRemitenteLimpio = String(formulario.remitente_ci || '').trim();
 
       const payload = {
         ...formulario,
@@ -476,7 +477,10 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
         recibido_por: codigoOperador,
         remitente_nombre: formulario.remitente_nombre.trim() || null,
         remitente_telefono: telRemLimpio || null,
-        remitente_ci: formulario.remitente_ci.trim() || null,
+        remitente_ci: ciRemitenteLimpio || null,
+        vendedor_ci: ciRemitenteLimpio || null, // Clave alternativa para máxima compatibilidad
+        vendedor_nombre: formulario.remitente_nombre.trim() || null,
+        vendedor_telefono: telRemLimpio || null,
         foto_paquete: fotoPrevia || null,
         slot_3d: primerSlotLibre < 12 ? primerSlotLibre : 0,
       };
@@ -541,9 +545,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       fechaRecepcion: p.fecha_recepcion || p.fecha_ingreso || loc.fechaRecepcion,
       fechaEntrega: p.fecha_entrega || loc.fechaEntrega || null,
       fotoPaquete: p.foto_paquete || loc.fotoPaquete || null,
-      remitenteNombre: p.remitente_nombre || loc.remitenteNombre || '',
-      remitenteTelefono: p.remitente_telefono || loc.remitenteTelefono || '',
-      remitenteCi: p.remitente_ci || loc.remitenteCi || '',
+      remitenteNombre: p.remitente_nombre || p.vendedor_nombre || loc.remitenteNombre || '',
+      remitenteTelefono: p.remitente_telefono || p.vendedor_telefono || loc.remitenteTelefono || '',
+      remitenteCi: p.remitente_ci || p.vendedor_ci || loc.remitenteCi || '',
       diasRetraso: moraInfo.diasRetraso,
       montoMora: moraInfo.montoMora,
       vencido: moraInfo.vencido,
@@ -558,8 +562,8 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       String(p.destinatario_nombre || '').toLowerCase().includes(q) ||
       String(p.destinatario_ci || '').toLowerCase().includes(q) ||
       String(p.token_retiro || '').toLowerCase().includes(q) ||
-      String(p.remitente_ci || '').toLowerCase().includes(q) ||
-      String(p.remitente_nombre || '').toLowerCase().includes(q)
+      String(p.remitente_ci || p.vendedor_ci || '').toLowerCase().includes(q) ||
+      String(p.remitente_nombre || p.vendedor_nombre || '').toLowerCase().includes(q)
     );
   });
 
@@ -1035,9 +1039,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                     const locFila = bitacoraLocal[p.codigo_rastreo] || {};
                     const fotoMostrar = p.foto_paquete || locFila.fotoPaquete;
                     
-                    const nombreVendedor = p.remitente_nombre || locFila.remitenteNombre || '---';
-                    const ciVendedor = p.remitente_ci || locFila.remitenteCi || '---';
-                    const telVendedor = p.remitente_telefono || locFila.remitenteTelefono || '---';
+                    const nombreVendedor = p.remitente_nombre || p.vendedor_nombre || loc.remitenteNombre || '---';
+                    const ciVendedor = p.remitente_ci || p.vendedor_ci || loc.remitenteCi || '---';
+                    const telVendedor = p.remitente_telefono || p.vendedor_telefono || loc.remitenteTelefono || '---';
 
                     const rec = p.recibido_por || locFila.recibidoPor || '---';
                     const ent = p.entregado_por || locFila.entregadoPor || (entregado ? '---' : 'Pendiente');

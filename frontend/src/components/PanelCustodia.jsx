@@ -134,9 +134,8 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   <th>Rastreo / Token</th>
                   <th>Comprador (Destinatario)</th>
                   <th>Vendedor / Remitente</th>
-                  <th>Atendido por (Operador)</th>
                   <th>Estante / Slot</th>
-                  <th>Horarios (Recepción / Entrega)</th>
+                  <th>Horarios y Operador (Rec / Ent)</th>
                   <th>Estado</th>
                 </tr>
               </thead>
@@ -150,10 +149,14 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   const fechaRec = formatearFecha(fechaRecRaw);
                   const fechaEnt = formatearFecha(fechaEntRaw);
                   
-                  const nombreVend = p.remitente_nombre || '---';
-                  const telVend = p.remitente_telefono ? `Tel: ${p.remitente_telefono}` : 'Tel: ---';
-                  const idVend = `ID Vendedor: ${p.id_vendedor || 1}`;
-                  const operadorRecibe = p.recibido_por || loc.recibidoPor || 'DUEÑO';
+                  // Datos del Vendedor / Remitente con el mismo formato que el comprador
+                  const nombreVend = p.remitente_nombre || loc.remitenteNombre || '---';
+                  const ciVend = p.remitente_ci || p.vendedor_ci || '---';
+                  const telVend = p.remitente_telefono || loc.remitenteTelefono || '---';
+
+                  // Operadores
+                  const opRecibe = p.recibido_por || loc.recibidoPor || 'DUEÑO';
+                  const opEntrega = p.entregado_por || loc.entregadoPor || 'DUEÑO';
 
                   return `
                     <tr>
@@ -171,18 +174,15 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                       </td>
                       <td>
                         <strong>${nombreVend}</strong><br/>
-                        <span style="color:#666;font-size:10px;">${idVend}</span><br/>
-                        <span style="color:#666;font-size:10px;">${telVend}</span>
-                      </td>
-                      <td>
-                        <span style="font-weight:bold; color:#0369a1;">${operadorRecibe}</span>
+                        CI: ${ciVend}<br/>
+                        Tel: ${telVend}
                       </td>
                       <td>
                         <span style="font-family:monospace;font-weight:bold;">${p.ubicacion_estante || 'E-01'}</span>
                       </td>
                       <td>
-                        <span style="color:#0284c7;">Rec: ${fechaRec}</span><br/>
-                        <span style="color:#16a34a;">Ent: ${fechaEnt}</span>
+                        <span style="color:#0284c7;">Rec: ${fechaRec} <strong style="color:#0369a1;">(${opRecibe})</strong></span><br/>
+                        <span style="color:#16a34a;">Ent: ${fechaEnt} <strong style="color:#0369a1;">(${opEntrega})</strong></span>
                       </td>
                       <td>
                         <span class="badge">ENTREGADO</span>

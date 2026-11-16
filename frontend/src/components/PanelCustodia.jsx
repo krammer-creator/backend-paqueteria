@@ -144,6 +144,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
   useEffect(() => {
     cargarDatos();
     
+  
   const respaldarYLimpiarEntregados = async () => {
     const entregados = paquetes.filter((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO'));
     if (entregados.length === 0) { alert('No hay paquetes entregados para respaldar.'); return; }
@@ -156,6 +157,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       if (typeof cargarDatos === 'function') await cargarDatos(); else window.location.reload();
     } catch(err) { console.error(err); alert('Error al procesar el respaldo'); }
   };
+  const respaldaryLimpiarEntregados = respaldarYLimpiarEntregados;
 
 return () => detenerCamaraWeb();
   }, []);

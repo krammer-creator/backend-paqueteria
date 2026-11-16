@@ -37,18 +37,56 @@ function comprimirImagenBase64(file, maxAncho = 720, calidad = 0.72) {
 
 export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVolver, onBack }) {
   const respaldarYLimpiarEntregados = async () => {
-    const entregados = paquetes.filter((p) => String(p.estado || "").trim().toUpperCase().includes("ENTREGADO"));
-    if (entregados.length === 0) { alert("No hay paquetes entregados para respaldar."); return; }
-    if (!window.confirm(`¿Deseas generar el reporte PDF y limpiar ${entregados.length} paquetes?`)) return;
+    const entregados = paquetes.filter((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO'));
+    if (entregados.length === 0) {
+      alert('No hay paquetes entregados para respaldar.');
+      return;
+    }
+    if (!window.confirm(`¿Deseas generar el reporte PDF y limpiar ${entregados.length} paquetes entregados?`)) {
+      return;
+    }
     try {
-      const w = window.open("", "_blank");
-      w.document.write(`<html><head><title>Reporte PDF</title><style>body{font-family:Arial;padding:20px}table{width:100%%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#f4f4f4}</style></head><body><h1>Respaldo de Paquetes Entregados</h1><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Destinatario</th><th>Teléfono</th><th>Estante</th><th>Estado</th></tr></thead><tbody>${entregados.map(p=>`<tr><td>${p.codigo || p.tracking || p.id || 'N/A'}</td><td>${p.destinatario || p.nombre || p.cliente || 'N/A'}</td><td>${p.telefono || p.celular || p.whatsapp || 'N/A'}</td><td>${p.estante || p.ubicacion || 'N/A'}</td><td>${p.estado || 'ENTREGADO'}</td></tr>`).join("")}</tbody></table><script>window.onload=()=>window.print();</script></body></html>`);
+      const getVal = (p, keys) => {
+        for (const k of keys) {
+          if (p[k] !== undefined && p[k] !== null && String(p[k]).trim() !== '') return p[k];
+        }
+        return 'N/A';
+      };
+
+      const w = window.open('', '_blank');
+      w.document.write(`<html><head><title>Reporte PDF</title><style>body{font-family:Arial;padding:20px}table{width:100%%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#f4f4f4}</style></head><body><h1>Respaldo de Paquetes Entregados</h1><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Destinatario</th><th>Teléfono</th><th>Estante</th><th>Estado</th></tr></thead><tbody>${entregados.map(p=>`<tr><td>${getVal(p, ['codigo', 'tracking', 'id', 'codigo_seguimiento'])}</td><td>${getVal(p, ['destinatario', 'nombre', 'cliente', 'nombre_destinatario'])}</td><td>${getVal(p, ['telefono', 'celular', 'whatsapp', 'fono'])}</td><td>${getVal(p, ['estante', 'ubicacion', 'casillero'])}</td><td>${getVal(p, ['estado'])}</td></tr>`).join('')}</tbody></table><script>window.onload=()=>window.print();</script></body></html>`);
       w.document.close();
-      if (typeof limpiarPaquetesEntregadosApi === 'function') await limpiarPaquetesEntregadosApi();
-      if (typeof cargarDatos === 'function') await cargarDatos(); else window.location.reload();
-    } catch(err) { console.error(err); alert('Error al procesar el respaldo'); }
+      if (typeof limpiarPaquetesEntregadosApi === 'function') {
+        await limpiarPaquetesEntregadosApi();
+      }
+      if (typeof cargarDatos === 'function') {
+        await cargarDatos();
+      } else {
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error al procesar el respaldo');
+    }
   };
   const respaldaryLimpiarEntregados = respaldarYLimpiarEntregados;
+
+  const w = window.open('', '_blank');
+      w.document.write(`<html><head><title>Reporte PDF</title><style>body{font-family:Arial;padding:20px}table{width:100%%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#f4f4f4}</style></head><body><h1>Respaldo de Paquetes Entregados</h1><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Destinatario</th><th>Teléfono</th><th>Estante</th><th>Estado</th></tr></thead><tbody>${entregados.map(p=>`<tr><td>${getVal(p, ['codigo', 'tracking', 'id', 'codigo_seguimiento'])}</td><td>${getVal(p, ['destinatario', 'nombre', 'cliente', 'nombre_destinatario'])}</td><td>${getVal(p, ['telefono', 'celular', 'whatsapp', 'fono'])}</td><td>${getVal(p, ['estante', 'ubicacion', 'casillero'])}</td><td>${getVal(p, ['estado'])}</td></tr>`).join('')}</tbody></table><script>window.onload=()=>window.print();</script></body></html>`);
+      w.document.close();
+      if (typeof limpiarPaquetesEntregadosApi === 'function') {
+        await limpiarPaquetesEntregadosApi();
+      }
+      if (typeof cargarDatos === 'function') {
+        await cargarDatos();
+      } else {
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error al procesar el respaldo');
+    }
+  };
 
   const w = window.open("", "_blank");
       w.document.write(`<html><head><title>Reporte PDF</title><style>body{font-family:Arial;padding:20px}table{width:100%%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#f4f4f4}</style></head><body><h1>Respaldo de Paquetes Entregados</h1><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Destinatario</th><th>Teléfono</th><th>Estante</th><th>Estado</th></tr></thead><tbody>${entregados.map(p=>`<tr><td>${getVal(p, ['codigo', 'tracking', 'id', 'codigo_seguimiento', 'nro_guia', 'nroGuia'])}</td><td>${getVal(p, ['destinatario', 'nombre', 'cliente', 'nombre_destinatario', 'persona', 'destinatario_nombre'])}</td><td>${getVal(p, ['telefono', 'celular', 'whatsapp', 'fono', 'contacto', 'telefono_destinatario'])}</td><td>${getVal(p, ['estante', 'ubicacion', 'casillero', 'rack', 'posicion'])}</td><td>${getVal(p, ['estado'])}</td></tr>`).join("")}</tbody></table><script>window.onload=()=>window.print();</script></body></html>`);

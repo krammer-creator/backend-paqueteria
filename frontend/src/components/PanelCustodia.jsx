@@ -36,48 +36,6 @@ function comprimirImagenBase64(file, maxAncho = 720, calidad = 0.72) {
 }
 
 export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVolver, onBack }) {
-
-  function respaldarYLimpiarEntregados() {
-    const entregados = paquetes.filter((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO'));
-    if (entregados.length === 0) {
-      alert('No hay paquetes entregados para respaldar.');
-      return;
-    }
-    if (!window.confirm(`¿Deseas generar el reporte PDF y limpiar ${entregados.length} paquetes entregados?`)) {
-      return;
-    }
-    try {
-      const getVal = (p, keys) => {
-        for (const k of keys) {
-          if (p[k] !== undefined && p[k] !== null && String(p[k]).trim() !== '' && String(p[k]).trim() !== 'undefined') {
-            return p[k];
-          }
-        }
-        return 'N/A';
-      };
-
-      const w = window.open('', '_blank');
-      w.document.write(`<html><head><title>Reporte PDF</title><style>body{font-family:Arial;padding:20px}table{width:100%%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#f4f4f4}</style></head><body><h1>Respaldo de Paquetes Entregados</h1><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Destinatario</th><th>Teléfono</th><th>Estante</th><th>Estado</th></tr></thead><tbody>${entregados.map(p=>`<tr><td>${getVal(p, ['codigo_rastreo', 'codigo', 'tracking', 'id', 'codigo_seguimiento'])}</td><td>${getVal(p, ['destinatario_nombre', 'destinatario', 'nombre', 'cliente', 'nombre_destinatario'])}</td><td>${getVal(p, ['destinatario_telefono', 'telefono', 'celular', 'whatsapp', 'fono'])}</td><td>${getVal(p, ['ubicacion_estante', 'estante', 'ubicacion', 'casillero'])}</td><td>${getVal(p, ['estado'])}</td></tr>`).join('')}</tbody></table><script>window.onload=()=>window.print();</script></body></html>`);
-      w.document.close();
-
-      const limpiarFn = typeof limpiarPaquetesEntregadosApi === 'function' ? limpiarPaquetesEntregadosApi() : Promise.resolve();
-      limpiarFn.then(() => {
-        if (typeof cargarDatos === 'function') {
-          cargarDatos();
-        } else {
-          window.location.reload();
-        }
-      }).catch(err => {
-        console.error(err);
-        window.location.reload();
-      });
-    } catch (err) {
-      console.error(err);
-      alert('Error al procesar el respaldo');
-    }
-  }
-
-
   const [paquetes, setPaquetes] = useState(paquetesIniciales);
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -123,20 +81,27 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
     fecha_limite: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
   });
 
-  
+  function respaldarYLimpiarEntregados() {
+    const entregados = paquetes.filter((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO'));
+    if (entregados.length === 0) {
+      alert('No hay paquetes entregados para respaldar.');
+      return;
+    }
     if (!window.confirm(`¿Deseas generar el reporte PDF y limpiar ${entregados.length} paquetes entregados?`)) {
       return;
     }
     try {
       const getVal = (p, keys) => {
         for (const k of keys) {
-          if (p[k] !== undefined && p[k] !== null && String(p[k]).trim() !== '') return p[k];
+          if (p[k] !== undefined && p[k] !== null && String(p[k]).trim() !== '' && String(p[k]).trim() !== 'undefined') {
+            return p[k];
+          }
         }
         return 'N/A';
       };
 
       const w = window.open('', '_blank');
-      w.document.write(`<html><head><title>Reporte PDF</title><style>body{font-family:Arial;padding:20px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#f4f4f4}</style></head><body><h1>Respaldo de Paquetes Entregados</h1><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Destinatario</th><th>Teléfono</th><th>Estante</th><th>Estado</th></tr></thead><tbody>${entregados.map(p=>`<tr><td>${getVal(p, ['codigo', 'tracking', 'id', 'codigo_seguimiento'])}</td><td>${getVal(p, ['destinatario', 'nombre', 'cliente', 'nombre_destinatario'])}</td><td>${getVal(p, ['telefono', 'celular', 'whatsapp', 'fono'])}</td><td>${getVal(p, ['estante', 'ubicacion', 'casillero'])}</td><td>${getVal(p, ['estado'])}</td></tr>`).join('')}</tbody></table><script>window.onload=()=>window.print();</script></body></html>`);
+      w.document.write(`<html><head><title>Reporte PDF</title><style>body{font-family:Arial;padding:20px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#f4f4f4}</style></head><body><h1>Respaldo de Paquetes Entregados</h1><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Destinatario</th><th>Teléfono</th><th>Estante</th><th>Estado</th></tr></thead><tbody>${entregados.map(p=>`<tr><td>${getVal(p, ['codigo_rastreo', 'codigo', 'tracking', 'id', 'codigo_seguimiento'])}</td><td>${getVal(p, ['destinatario_nombre', 'destinatario', 'nombre', 'cliente', 'nombre_destinatario'])}</td><td>${getVal(p, ['destinatario_telefono', 'telefono', 'celular', 'whatsapp', 'fono'])}</td><td>${getVal(p, ['ubicacion_estante', 'estante', 'ubicacion', 'casillero'])}</td><td>${getVal(p, ['estado'])}</td></tr>`).join('')}</tbody></table><script>window.onload=()=>window.print();</script></body></html>`);
       w.document.close();
 
       const limpiarFn = typeof limpiarPaquetesEntregadosApi === 'function' ? limpiarPaquetesEntregadosApi() : Promise.resolve();

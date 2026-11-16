@@ -67,7 +67,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
   const [busqueda, setBusqueda] = useState('');
   const [fotoPrevia, setFotoPrevia] = useState(null);
 
-  // Estados independientes para el vendedor
+  // Campos del remitente (vendedor) que deja el paquete
   const [remitenteNombre, setRemitenteNombre] = useState('');
   const [remitenteTelefono, setRemitenteTelefono] = useState('');
   const [remitenteCi, setRemitenteCi] = useState('');
@@ -1033,8 +1033,8 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
                     const locFila = bitacoraLocal[p.codigo_rastreo] || {};
                     const fotoMostrar = p.foto_paquete || locFila.fotoPaquete;
-                    const ciVendedor = p.remitente_ci || p.vendedor_ci || locFila.remitenteCi || '---';
-                    const telVendedor = p.remitente_telefono || p.vendedor_telefono || loc.remitenteTelefono || '---';
+                    const ciVendedor = p.remitente_ci || locFila.remitenteCi || '---';
+                    const telVendedor = p.remitente_telefono || locFila.remitenteTelefono || '---';
 
                     const rec = p.recibido_por || locFila.recibidoPor || '---';
                     const ent = p.entregado_por || locFila.entregadoPor || (entregado ? '---' : 'Pendiente');
@@ -1072,7 +1072,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-white">{p.remitente_nombre || p.vendedor_nombre || '---'}</div>
+                          <div className="font-semibold text-white">{p.remitente_nombre || '---'}</div>
                           <div className="text-xs text-slate-400">
                             CI: {ciVendedor} • Tel: {telVendedor}
                           </div>

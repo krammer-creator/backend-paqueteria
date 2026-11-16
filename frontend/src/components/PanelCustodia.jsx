@@ -268,9 +268,6 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
     return acc;
   }, {});
 
-  const estanteActual = (formulario.ubicacion_estante || 'E-01').toUpperCase();
-  const estanteLleno = (ocupacionPorEstante[estanteActual] || 0) >= CAPACIDAD_MAX_ESTANTE;
-
   const cargarDatos = async () => {
     setCargando(true);
     setErrorApi('');
@@ -296,28 +293,11 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
   useEffect(() => {
     const { siguienteTrk, siguienteToken } = calcularSiguientesCodigos(paquetes);
-    setFormulario((prev) => {
-      const actual = (prev.ubicacion_estante || 'E-01').toUpperCase();
-      const cantActual = (paquetes || []).filter(
-        (p) =>
-          (p.estado || '').toUpperCase() !== 'ENTREGADO' &&
-          (p.ubicacion_estante || 'E-01').toUpperCase() === actual
-      ).length;
-      const libre = LISTA_ESTANTES.find(
-        (est) =>
-          (paquetes || []).filter(
-            (p) =>
-              (p.estado || '').toUpperCase() !== 'ENTREGADO' &&
-              (p.ubicacion_estante || 'E-01').toUpperCase() === est
-          ).length < CAPACIDAD_MAX_ESTANTE
-      );
-      return {
-        ...prev,
-        codigo_rastreo: siguienteTrk,
-        token_retiro: siguienteToken,
-        ubicacion_estante: cantActual >= CAPACIDAD_MAX_ESTANTE && libre ? libre : prev.ubicacion_estante,
-      };
-    });
+    setFormulario((prev) => ({
+      ...prev,
+      codigo_rastreo: siguienteTrk,
+      token_retiro: siguienteToken,
+    }));
   }, [paquetes]);
 
   const detenerCamaraWeb = () => {
@@ -433,8 +413,15 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
   const handleRegistrar = async (e) => {
     e.preventDefault();
-    if (estanteLleno) {
-      setErrorApi(`El estante ${estanteActual} está lleno.`);
+    const estSel = (formulario.ubicacion_estante || 'E-01').toUpperCase();
+    const ocupadosEnEstante = (paquetes || []).filter(
+      (p) =>
+        (p.estado || '').toUpperCase() !== 'ENTREGADO' &&
+        (p.ubicacion_estante || 'E-01').toUpperCase() === estSel
+    ).length;
+
+    if (ocupadosEnEstante >= CAPACIDAD_MAX_ESTANTE) {
+      setErrorApi(`El estante ${estSel} está lleno (${CAPACIDAD_MAX_ESTANTE}/${CAPACIDAD_MAX_ESTANTE}).`);
       return;
     }
 
@@ -443,7 +430,6 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
     setMensajeOk('');
 
     try {
-      const estSel = (formulario.ubicacion_estante || 'E-01').toUpperCase();
       const ocupadosSlots = new Set(
         (paquetes || [])
           .filter(
@@ -458,13 +444,15 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       while (ocupadosSlots.has(primerSlotLibre) && primerSlotLibre < 12) primerSlotLibre++;
 
       const telRemLimpio = remitenteTelefono.replace(/\D/g, '');
+      const codigoOperador = operadorActivo?.codigo || 'DUEÑO';
+
       const payload = {
         ...formulario,
         id_vendedor: Number(formulario.id_vendedor) || 1,
         costo_custodia: parseFloat(formulario.costo_custodia) || 0,
         monto_producto: parseFloat(formulario.monto_producto) || 0,
         fecha_limite: new Date(formulario.fecha_limite).toISOString(),
-        recibido_por: operadorActivo?.codigo || 'DUEÑO',
+        recibido_por: codigoOperador,
         remitente_nombre: remitenteNombre.trim() || null,
         remitente_telefono: telRemLimpio || null,
         remitente_ci: remitenteCi.trim() || null,
@@ -488,7 +476,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
         window.open(urlWa, '_blank', 'noopener,noreferrer');
       }
 
-      setMensajeOk(`Paquete ${formulario.codigo_rastreo} registrado con éxito.`);
+      setMensajeOk(`Paquete ${formulario.codigo_rastreo} registrado con éxito por [${codigoOperador}].`);
       setFotoPrevia(null);
       setRemitenteNombre('');
       setRemitenteTelefono('');
@@ -679,13 +667,23 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Estante / Slot</label>
-                <input
-                  type="text"
-                  disabled
-                  value={`${formulario.ubicacion_estante}`}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-sky-400 font-mono font-bold"
-                />
+                <label className="block text-xs text-slate-400 mb-1.5">Estante de Almacenamiento *</label>
+                <select
+                  name="ubicacion_estante"
+                  value={formulario.ubicacion_estante}
+                  onChange={handleChange}
+                  className="w-full bg-slate-950 border border-sky-500/50 rounded-xl px-4 py-2.5 text-sm text-sky-300 font-mono font-bold focus:outline-none"
+                >
+                  {LISTA_ESTANTES.map((est) => {
+                    const ocupados = ocupacionPorEstante[est] || 0;
+                    const lleno = ocupados >= CAPACIDAD_MAX_ESTANTE;
+                    return (
+                      <option key={est} value={est} disabled={lleno}>
+                        {est} {lleno ? '(LLENO)' : `(${ocupados}/${CAPACIDAD_MAX_ESTANTE})`}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
             </div>
 
@@ -814,7 +812,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
               <button
                 type="submit"
-                disabled={guardando || estanteLleno}
+                disabled={guardando}
                 className="w-full py-2.5 px-5 rounded-xl bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-slate-950 font-bold text-sm transition cursor-pointer"
               >
                 {guardando ? 'Guardando...' : 'Registrar Paquete'}
@@ -956,9 +954,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
             )}
 
             <div className="mt-3 flex items-center justify-between text-xs text-slate-400 bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-800">
-              <span>Etiqueta lista:</span>
+              <span>Estante Seleccionado:</span>
               <span className="font-mono font-bold text-sky-400">
-                {formulario.codigo_rastreo} • {formulario.ubicacion_estante}
+                {formulario.ubicacion_estante}
               </span>
             </div>
           </div>

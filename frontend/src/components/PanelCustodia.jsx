@@ -91,6 +91,23 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       return;
     }
     try {
+      // Función auxiliar para limpiar formato de fechas ISO a DD/MM/YYYY HH:MM
+      const formatearFecha = (strFecha) => {
+        if (!strFecha || strFecha === 'Registrada' || strFecha === '---') return strFecha;
+        try {
+          const d = new Date(strFecha);
+          if (isNaN(d.getTime())) return strFecha; // si ya es un string personalizado
+          const dia = String(d.getDate()).padStart(2, '0');
+          const mes = String(d.getMonth() + 1).padStart(2, '0');
+          const anio = d.getFullYear();
+          const hora = String(d.getHours()).padStart(2, '0');
+          const min = String(d.getMinutes()).padStart(2, '0');
+          return `${dia}/${mes}/${anio} ${hora}:${min}`;
+        } catch {
+          return strFecha;
+        }
+      };
+
       const w = window.open('', '_blank');
       w.document.write(`
         <html>
@@ -127,12 +144,18 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                 ${entregados.map(p => {
                   const loc = bitacoraLocal[p.codigo_rastreo] || {};
                   const foto = p.foto_paquete || loc.fotoPaquete || '';
-                  const fechaRec = p.fecha_recepcion || p.fecha_ingreso || loc.fechaRecepcion || '---';
-                  const fechaEnt = p.fecha_entrega || loc.fechaEntrega || 'Registrada';
                   
+                  const fechaRecRaw = p.fecha_recepcion || p.fecha_ingreso || loc.fechaRecepcion || '---';
+                  const fechaEntRaw = p.fecha_entrega || loc.fechaEntrega || 'Registrada';
+                  const fechaRec = formatearFecha(fechaRecRaw);
+                  const fechaEnt = formatearFecha(fechaEntRaw);
+                  
+                  // Datos detallados del vendedor / remitente
                   const nombreVend = p.remitente_nombre || '---';
-                  const telVend = p.remitente_telefono ? `Tel: ${p.remitente_telefono}` : '';
+                  const telVend = p.remitente_telefono ? `Tel: ${p.remitente_telefono}` : 'Tel: ---';
                   const idVend = `ID Vendedor: ${p.id_vendedor || 1}`;
+
+                  // Operador que atendió
                   const operadorRecibe = p.recibido_por || loc.recibidoPor || 'DUEÑO';
 
                   return `

@@ -43,8 +43,11 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
   const [mensajeOk, setMensajeOk] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [fotoPrevia, setFotoPrevia] = useState(null);
-  const [remitenteTelefono, setRemitenteTelefono] = useState('');
+
+  // Campos del remitente (vendedor) que deja el paquete
   const [remitenteNombre, setRemitenteNombre] = useState('');
+  const [remitenteTelefono, setRemitenteTelefono] = useState('');
+  const [remitenteCi, setRemitenteCi] = useState('');
 
   const [camaraActiva, setCamaraActiva] = useState(false);
   const [listaCamaras, setListaCamaras] = useState([]);
@@ -144,7 +147,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   const fechaEnt = formatearFecha(p.fecha_entrega || loc.fechaEntrega || 'Registrada');
                   
                   const nombreVend = p.remitente_nombre || loc.remitenteNombre || '---';
-                  const ciVend = p.remitente_ci || p.vendedor_ci || '---';
+                  const ciVend = p.remitente_ci || loc.remitenteCi || '---';
                   const telVend = p.remitente_telefono || loc.remitenteTelefono || '---';
 
                   const opRecibe = p.recibido_por || loc.recibidoPor || 'DUEÑO';
@@ -199,7 +202,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
     }
   }
 
-  // Botón 2: Llama correctamente al endpoint agrupado de FastAPI para borrar los entregados
+  // Botón 2: Borra definitivamente los entregados de Supabase mediante petición DELETE real
   const limpiarPaquetesEntregadosSupabase = async () => {
     const entregados = paquetes.filter((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO'));
     if (entregados.length === 0) {
@@ -464,6 +467,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
         recibido_por: operadorActivo?.codigo || 'DUEÑO',
         remitente_nombre: remitenteNombre.trim() || null,
         remitente_telefono: telRemLimpio || null,
+        remitente_ci: remitenteCi.trim() || null,
         foto_paquete: fotoPrevia || null,
         slot_3d: primerSlotLibre < 12 ? primerSlotLibre : 0,
       };
@@ -486,8 +490,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
       setMensajeOk(`Paquete ${formulario.codigo_rastreo} registrado con éxito.`);
       setFotoPrevia(null);
-      setRemitenteTelefono('');
       setRemitenteNombre('');
+      setRemitenteTelefono('');
+      setRemitenteCi('');
       if (inputFotoRef.current) inputFotoRef.current.value = '';
 
       setFormulario((prev) => ({
@@ -528,6 +533,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       fotoPaquete: p.foto_paquete || loc.fotoPaquete || null,
       remitenteNombre: p.remitente_nombre || loc.remitenteNombre || '',
       remitenteTelefono: p.remitente_telefono || loc.remitenteTelefono || '',
+      remitenteCi: p.remitente_ci || loc.remitenteCi || '',
     };
   };
 
@@ -649,18 +655,6 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5">ID Vendedor *</label>
-                <input
-                  type="number"
-                  name="id_vendedor"
-                  required
-                  value={formulario.id_vendedor}
-                  onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
-                />
-              </div>
-
-              <div>
                 <label className="block text-xs text-slate-400 mb-1.5">Código Rastreo</label>
                 <input
                   type="text"
@@ -683,50 +677,104 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white font-mono text-amber-300 font-bold"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Destinatario *</label>
-                <input
-                  type="text"
-                  name="destinatario_nombre"
-                  required
-                  value={formulario.destinatario_nombre}
-                  onChange={handleChange}
-                  placeholder="Nombre completo"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
-                />
-              </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Celular Destinatario *</label>
+                <label className="block text-xs text-slate-400 mb-1.5">Estante / Slot</label>
                 <input
                   type="text"
-                  name="destinatario_telefono"
-                  required
-                  value={formulario.destinatario_telefono}
-                  onChange={handleChange}
-                  placeholder="76543210"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">CI Destinatario *</label>
-                <input
-                  type="text"
-                  name="destinatario_ci"
-                  required
-                  value={formulario.destinatario_ci}
-                  onChange={handleChange}
-                  placeholder="Ej. 6543210 LP"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
+                  disabled
+                  value={`${formulario.ubicacion_estante}`}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-sky-400 font-mono font-bold"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            {/* Datos del Vendedor / Remitente */}
+            <div className="border-t border-slate-800 pt-3">
+              <h3 className="text-xs font-semibold text-slate-400 uppercase mb-2">Datos del Vendedor (Remitente)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1.5">Nombre Vendedor *</label>
+                  <input
+                    type="text"
+                    required
+                    value={remitenteNombre}
+                    onChange={(e) => setRemitenteNombre(e.target.value)}
+                    placeholder="Nombre del vendedor"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1.5">Celular Vendedor (WhatsApp) *</label>
+                  <input
+                    type="text"
+                    required
+                    value={remitenteTelefono}
+                    onChange={(e) => setRemitenteTelefono(e.target.value)}
+                    placeholder="76543210"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1.5">CI Vendedor *</label>
+                  <input
+                    type="text"
+                    required
+                    value={remitenteCi}
+                    onChange={(e) => setRemitenteCi(e.target.value)}
+                    placeholder="Ej. 1234567 LP"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Datos del Comprador / Destinatario */}
+            <div className="border-t border-slate-800 pt-3">
+              <h3 className="text-xs font-semibold text-slate-400 uppercase mb-2">Datos del Comprador (Destinatario)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1.5">Destinatario *</label>
+                  <input
+                    type="text"
+                    name="destinatario_nombre"
+                    required
+                    value={formulario.destinatario_nombre}
+                    onChange={handleChange}
+                    placeholder="Nombre completo"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1.5">Celular Destinatario *</label>
+                  <input
+                    type="text"
+                    name="destinatario_telefono"
+                    required
+                    value={formulario.destinatario_telefono}
+                    onChange={handleChange}
+                    placeholder="76543210"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1.5">CI Destinatario *</label>
+                  <input
+                    type="text"
+                    name="destinatario_ci"
+                    required
+                    value={formulario.destinatario_ci}
+                    onChange={handleChange}
+                    placeholder="Ej. 6543210 LP"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end border-t border-slate-800 pt-3">
               <div>
                 <label className="block text-xs text-slate-400 mb-1.5">Custodia (Bs)</label>
                 <input

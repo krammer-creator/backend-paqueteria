@@ -488,6 +488,15 @@ export default function PanelCustodia({
           </div>
 
           <div className="flex items-center gap-2.5">
+            {paquetes.some((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO')) && (
+  <button
+    type="button"
+    onClick={respaldarYLimpiarEntregados}
+    className="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-bold text-sm transition cursor-pointer"
+  >
+    📥 Respaldo PDF y Limpiar Entregados
+  </button>
+)}
             {pendientesMigrar.length > 0 && (
               <button
                 type="button"

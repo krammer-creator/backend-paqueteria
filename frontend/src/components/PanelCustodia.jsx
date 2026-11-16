@@ -199,7 +199,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
     }
   }
 
-  // Botón 2: Botón independiente para limpiar/borrar los entregados de Supabase
+  // Botón 2: Borra definitivamente los entregados de Supabase mediante petición DELETE real
   const limpiarPaquetesEntregadosSupabase = async () => {
     const entregados = paquetes.filter((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO'));
     if (entregados.length === 0) {
@@ -213,23 +213,23 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
     setCargando(true);
     setErrorApi('');
     try {
-      // Aquí llamamos a la API o realizamos el borrado individual/lote
-      // Asumiendo que iteramos sobre cada ID entregado o llamamos una función de servicio:
       await Promise.all(
         entregados.map((p) => {
           const id = p.id_paquete || p.id;
-          // Si tienes una función de API para eliminar por ID, úsala aquí:
-          // return eliminarPaqueteApi(id);
-          // O si actualizas con una función genérica:
-          return actualizarPaquete(id, { estado: 'ARCHIVADO_ELIMINADO' }).catch(() => {});
+          return fetch(`https://backend-paqueteria.onrender.com/paquetes/${id}`, {
+            method: 'DELETE',
+          }).then(res => {
+            if (!res.ok) throw new Error('Error al eliminar');
+            return res.json().catch(() => {});
+          });
         })
       );
 
-      setMensajeOk(`Se han limpiado ${entregados.length} paquetes entregados correctamente.`);
+      setMensajeOk(`Se han eliminado ${entregados.length} paquetes entregados de Supabase con éxito.`);
       await cargarDatos();
     } catch (err) {
       console.error(err);
-      setErrorApi('No se pudieron eliminar los paquetes entregados de la base de datos.');
+      setErrorApi('No se pudieron eliminar los paquetes de la base de datos. Verifica la conexión con la API.');
     } finally {
       setCargando(false);
     }
@@ -645,7 +645,6 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
           </div>
         )}
 
-        {/* ... resto del formulario y tablas ... */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <form onSubmit={handleRegistrar} className="lg:col-span-2 bg-slate-900/70 border border-slate-800 rounded-2xl p-5 space-y-4">
             <h2 className="text-base font-bold text-white mb-2">Registrar Nuevo Paquete en Custodia</h2>

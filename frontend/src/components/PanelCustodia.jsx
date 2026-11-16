@@ -91,12 +91,12 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       return;
     }
     try {
-      // Función auxiliar para limpiar formato de fechas ISO a DD/MM/YYYY HH:MM
+      // Función auxiliar para formatear fechas ISO a DD/MM/YYYY HH:MM de forma limpia
       const formatearFecha = (strFecha) => {
         if (!strFecha || strFecha === 'Registrada' || strFecha === '---') return strFecha;
         try {
           const d = new Date(strFecha);
-          if (isNaN(d.getTime())) return strFecha; // si ya es un string personalizado
+          if (isNaN(d.getTime())) return strFecha;
           const dia = String(d.getDate()).padStart(2, '0');
           const mes = String(d.getMonth() + 1).padStart(2, '0');
           const anio = d.getFullYear();
@@ -150,12 +150,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   const fechaRec = formatearFecha(fechaRecRaw);
                   const fechaEnt = formatearFecha(fechaEntRaw);
                   
-                  // Datos detallados del vendedor / remitente
                   const nombreVend = p.remitente_nombre || '---';
                   const telVend = p.remitente_telefono ? `Tel: ${p.remitente_telefono}` : 'Tel: ---';
                   const idVend = `ID Vendedor: ${p.id_vendedor || 1}`;
-
-                  // Operador que atendió
                   const operadorRecibe = p.recibido_por || loc.recibidoPor || 'DUEÑO';
 
                   return `

@@ -1035,7 +1035,6 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                     const locFila = bitacoraLocal[p.codigo_rastreo] || {};
                     const fotoMostrar = p.foto_paquete || locFila.fotoPaquete;
                     
-                    // Extraer los datos correctos tanto si vienen de Supabase como si están en la bitácora local
                     const nombreVendedor = p.remitente_nombre || locFila.remitenteNombre || '---';
                     const ciVendedor = p.remitente_ci || locFila.remitenteCi || '---';
                     const telVendedor = p.remitente_telefono || locFila.remitenteTelefono || '---';

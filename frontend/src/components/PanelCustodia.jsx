@@ -35,11 +35,7 @@ function comprimirImagenBase64(file, maxAncho = 720, calidad = 0.72) {
   });
 }
 
-export default function PanelCustodia({
-  paquetesIniciales = [],
-  onVolver3D, onVolver,
-  onBack,
-}) {
+export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVolver, onBack }) {
   const volverAl3D = onVolver3D || onVolver || onBack || (() => {});
   const inputFotoRef = useRef(null);
   const videoRef = useRef(null);

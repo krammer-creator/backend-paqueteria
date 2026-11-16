@@ -12,7 +12,7 @@ import ModalTicketImagen, { construirUrlWhatsApp } from './ModalTicketImagen';
 
 const CAPACIDAD_MAX_ESTANTE = 12;
 const LISTA_ESTANTES = ['E-01', 'E-02', 'E-03', 'E-04'];
-const DIAS_CUSTODIA_GRATIS = 20; // Ampliado a 20 días de espera flexible
+const DIAS_CUSTODIA_GRATIS = 20; // 20 días de espera flexible
 const TARIFA_MORA_DIARIA = 1.0; // 1 Bs por cada día de retraso vencido
 
 function comprimirImagenBase64(file, maxAncho = 720, calidad = 0.72) {
@@ -37,7 +37,6 @@ function comprimirImagenBase64(file, maxAncho = 720, calidad = 0.72) {
   });
 }
 
-// Función auxiliar para calcular días de retraso y mora
 export function calcularMoraPaquete(p) {
   const fechaLimStr = p.fecha_limite || p.fechaLimite;
   if (!fechaLimStr) return { diasRetraso: 0, montoMora: 0, vencido: false };
@@ -156,9 +155,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   <th>Evidencia</th>
                   <th>Rastreo / Token</th>
                   <th>Comprador (Destinatario)</th>
-                  <th>Vendedor (CI)</th>
+                  <th>Vendedor (Remitente)</th>
                   <th>Estante / Slot</th>
-                  <th>Horarios y Operador (Rec / Ent)</th>
+                  <th>Auditoría (Rec / Ent)</th>
                   <th>Estado</th>
                 </tr>
               </thead>
@@ -193,8 +192,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                       </td>
                       <td>
                         <strong>${nombreVend}</strong><br/>
-                        CI Vendedor: <strong style="color:#0284c7;">${ciVend}</strong><br/>
-                        Tel: ${telVend}
+                        CI: ${ciVend} • Tel: ${telVend}
                       </td>
                       <td>
                         <span style="font-family:monospace;font-weight:bold;">${p.ubicacion_estante || 'E-01'}</span>
@@ -501,7 +499,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
         window.open(urlWa, '_blank', 'noopener,noreferrer');
       }
 
-      setMensajeOk(`Paquete ${formulario.codigo_rastreo} registrado con éxito (Plazo 20 días) por [${codigoOperador}].`);
+      setMensajeOk(`Paquete ${formulario.codigo_rastreo} registrado con éxito por [${codigoOperador}].`);
       setFotoPrevia(null);
       setRemitenteNombre('');
       setRemitenteTelefono('');
@@ -562,7 +560,8 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       String(p.destinatario_nombre || '').toLowerCase().includes(q) ||
       String(p.destinatario_ci || '').toLowerCase().includes(q) ||
       String(p.token_retiro || '').toLowerCase().includes(q) ||
-      String(p.remitente_ci || '').toLowerCase().includes(q)
+      String(p.remitente_ci || '').toLowerCase().includes(q) ||
+      String(p.remitente_nombre || '').toLowerCase().includes(q)
     );
   });
 
@@ -628,7 +627,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
             </button>
             <div>
               <h1 className="text-xl font-bold text-white">Panel de Custodia y Entregas PUDO</h1>
-              <p className="text-xs text-slate-400">Sincronizado en tiempo real con Supabase (Plazo libre: 20 días + 1Bs/día mora)</p>
+              <p className="text-xs text-slate-400">Sincronizado en tiempo real con Supabase (Plazo: 20 días + 1Bs/día mora)</p>
             </div>
           </div>
 
@@ -1011,16 +1010,17 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   <th className="py-3 px-4 text-left text-xs font-semibold text-slate-400 uppercase">Rastreo</th>
                   <th className="py-3 px-4 text-left text-xs font-semibold text-slate-400 uppercase">Token</th>
                   <th className="py-3 px-4 text-left text-xs font-semibold text-slate-400 uppercase">Destinatario</th>
-                  <th className="py-3 px-4 text-left text-xs font-semibold text-slate-400 uppercase">Vendedor (CI)</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-slate-400 uppercase">Vendedor</th>
                   <th className="py-3 px-4 text-left text-xs font-semibold text-slate-400 uppercase">Estante</th>
                   <th className="py-3 px-4 text-left text-xs font-semibold text-slate-400 uppercase">Total Cobrar (+Mora)</th>
+                  <th className="py-3 px-4 text-left text-xs font-semibold text-slate-400 uppercase">Auditoría (Rec / Ent)</th>
                   <th className="py-3 px-4 text-left text-xs font-semibold text-slate-400 uppercase">Estado / Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/70">
                 {paquetesFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">
+                    <td colSpan={8} className="py-8 text-center text-slate-500">
                       No hay paquetes para mostrar.
                     </td>
                   </tr>
@@ -1034,6 +1034,10 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                     const locFila = bitacoraLocal[p.codigo_rastreo] || {};
                     const fotoMostrar = p.foto_paquete || locFila.fotoPaquete;
                     const ciVendedor = p.remitente_ci || locFila.remitenteCi || '---';
+                    const telVendedor = p.remitente_telefono || locFila.remitenteTelefono || '---';
+
+                    const rec = p.recibido_por || locFila.recibidoPor || '---';
+                    const ent = p.entregado_por || locFila.entregadoPor || (entregado ? '---' : 'Pendiente');
 
                     return (
                       <tr key={p.id_paquete} className={`hover:bg-slate-800/30 ${moraInfo.vencido && !entregado ? 'bg-rose-950/20' : ''}`}>
@@ -1068,8 +1072,10 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-200">{p.remitente_nombre || '---'}</div>
-                          <div className="text-xs text-sky-300 font-mono">CI: {ciVendedor}</div>
+                          <div className="font-semibold text-white">{p.remitente_nombre || '---'}</div>
+                          <div className="text-xs text-slate-400">
+                            CI: {ciVendedor} • Tel: {telVendedor}
+                          </div>
                         </td>
                         <td className="py-3 px-4">
                           <span className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 font-mono text-xs font-bold text-slate-200">
@@ -1083,6 +1089,16 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                               ⚠️ Vencido ({moraInfo.diasRetraso}d mora: +{moraInfo.montoMora.toFixed(2)} Bs)
                             </span>
                           )}
+                        </td>
+                        <td className="py-3 px-4 text-xs font-mono">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sky-300">
+                              Rec: <strong>{rec}</strong>
+                            </span>
+                            <span className={ent === 'Pendiente' ? 'text-slate-500' : 'text-emerald-300'}>
+                              Ent: <strong>{ent}</strong>
+                            </span>
+                          </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">

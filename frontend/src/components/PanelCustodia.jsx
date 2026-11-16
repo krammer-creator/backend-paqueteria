@@ -83,6 +83,11 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
   function respaldarYLimpiarEntregados() {
     const entregados = paquetes.filter((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO'));
+    
+    if (entregados.length > 0) {
+      console.log("Estructura real del paquete entregado:", entregados[0]);
+    }
+
     if (entregados.length === 0) {
       alert('No hay paquetes entregados para respaldar.');
       return;
@@ -91,17 +96,8 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       return;
     }
     try {
-      const getVal = (p, keys) => {
-        for (const k of keys) {
-          if (p[k] !== undefined && p[k] !== null && String(p[k]).trim() !== '' && String(p[k]).trim() !== 'undefined') {
-            return p[k];
-          }
-        }
-        return 'N/A';
-      };
-
       const w = window.open('', '_blank');
-      w.document.write(`<html><head><title>Reporte PDF</title><style>body{font-family:Arial;padding:20px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#f4f4f4}</style></head><body><h1>Respaldo de Paquetes Entregados</h1><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Destinatario</th><th>Teléfono</th><th>Estante</th><th>Estado</th></tr></thead><tbody>${entregados.map(p=>`<tr><td>${getVal(p, ['codigo_rastreo', 'codigo', 'tracking', 'id', 'codigo_seguimiento'])}</td><td>${getVal(p, ['destinatario_nombre', 'destinatario', 'nombre', 'cliente', 'nombre_destinatario'])}</td><td>${getVal(p, ['destinatario_telefono', 'telefono', 'celular', 'whatsapp', 'fono'])}</td><td>${getVal(p, ['ubicacion_estante', 'estante', 'ubicacion', 'casillero'])}</td><td>${getVal(p, ['estado'])}</td></tr>`).join('')}</tbody></table><script>window.onload=()=>window.print();</script></body></html>`);
+      w.document.write(`<html><head><title>Reporte PDF</title><style>body{font-family:Arial;padding:20px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#f4f4f4}</style></head><body><h1>Respaldo de Paquetes Entregados</h1><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Destinatario</th><th>Teléfono</th><th>Estante</th><th>Estado</th></tr></thead><tbody>${entregados.map(p=>`<tr><td>${p.codigo_rastreo || p.codigo || p.id || 'N/A'}</td><td>${p.destinatario_nombre || p.nombre || p.cliente || 'N/A'}</td><td>${p.destinatario_telefono || p.telefono || p.celular || 'N/A'}</td><td>${p.ubicacion_estante || p.estante || 'N/A'}</td><td>${p.estado || 'N/A'}</td></tr>`).join('')}</tbody></table><script>window.onload=()=>window.print();</script></body></html>`);
       w.document.close();
 
       const limpiarFn = typeof limpiarPaquetesEntregadosApi === 'function' ? limpiarPaquetesEntregadosApi() : Promise.resolve();

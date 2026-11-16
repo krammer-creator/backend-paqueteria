@@ -741,7 +741,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1.5">CI Vendedor *</label>
+                  <label className="block text-xs text-slate-400 mb-1.5">CI Vendedor (Opcional) *</label>
                   <input
                     type="text"
                     required

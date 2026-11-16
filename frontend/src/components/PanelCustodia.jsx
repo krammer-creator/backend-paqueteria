@@ -236,21 +236,22 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
     }
   };
 
+  // Lógica robusta para soportar más de 999 o 9999 sin romperse
   const calcularSiguientesCodigos = (listaPaquetes) => {
     let maxTrk = 0;
     let maxToken = 0;
 
     (listaPaquetes || []).forEach((p) => {
-      const matchTrk = String(p.codigo_rastreo || '').match(/^TRK-BO-(\d{1,3})$/i);
+      const matchTrk = String(p.codigo_rastreo || '').match(/^TRK-BO-(\d+)$/i);
       if (matchTrk) {
         const num = parseInt(matchTrk[1], 10);
         if (num > maxTrk) maxTrk = num;
       }
 
-      const matchTok = String(p.token_retiro || '').match(/^(\d{4})$/);
+      const matchTok = String(p.token_retiro || '').match(/^(\d+)$/);
       if (matchTok) {
         const numTok = parseInt(matchTok[1], 10);
-        if (numTok < 1000 && numTok > maxToken) maxToken = numTok;
+        if (numTok > maxToken) maxToken = numTok;
       }
     });
 
@@ -643,26 +644,24 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Código Rastreo</label>
+                <label className="block text-xs text-slate-400 mb-1.5">Código Rastreo (Automático)</label>
                 <input
                   type="text"
                   name="codigo_rastreo"
-                  required
+                  readOnly
                   value={formulario.codigo_rastreo}
-                  onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white font-mono"
+                  className="w-full bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-400 font-mono cursor-not-allowed select-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Token Retiro</label>
+                <label className="block text-xs text-slate-400 mb-1.5">Token Retiro (Automático)</label>
                 <input
                   type="text"
                   name="token_retiro"
-                  required
+                  readOnly
                   value={formulario.token_retiro}
-                  onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white font-mono text-amber-300 font-bold"
+                  className="w-full bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-amber-300/80 font-mono font-bold cursor-not-allowed select-none"
                 />
               </div>
 

@@ -522,7 +522,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
   };
 
   const handleEntregar = async (pkg) => {
-
+    
     setErrorApi('');
     setMensajeOk('');
     try {
@@ -533,47 +533,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       setErrorApi('No se pudo actualizar el estado de entrega.');
     }
   };
-} catch {
-          setErrorApi('No se pudo actualizar el estado de entrega.');
-        }
-      }; // <--- Fin de handleEntregar (línea 535)
 
-      // ⬇️ PÉGALO AQUÍ EXACTAMENTE (Línea 536) ⬇️
-      const handleMoverCaja3D = async (idPaquete, nuevoEstante, nuevoSlot) => {
-        setCargando(true);
-        setErrorApi('');
-        try {
-          const slotOcupado = paquetes.some(
-            (p) =>
-              p.id_paquete !== idPaquete &&
-              (p.estado || '').toUpperCase() !== 'ENTREGADO' &&
-              (p.ubicacion_estante || '').toUpperCase() === nuevoEstante.toUpperCase() &&
-              p.slot_3d === nuevoSlot
-          );
-
-          if (slotOcupado) {
-            alert(`El slot ${nuevoSlot} en el estante ${nuevoEstante} ya está ocupado. Elige otro espacio.`);
-            setCargando(false);
-            return;
-          }
-
-          await actualizarPaquete(idPaquete, {
-            ubicacion_estante: nuevoEstante,
-            slot_3d: nuevoSlot
-          });
-
-          await cargarDatos();
-        } catch (err) {
-          console.error("Error al mover caja:", err);
-          setErrorApi("No se pudo mover la caja. Verifica la conexión.");
-        } finally {
-          setCargando(false);
-        }
-      };
-      // ⬆️ FIN DEL CÓDIGO A PEGAR ⬆️
-
-      const construirBitacoraSupabase = (p) => { // <--- Línea 537 original
-        if (!p) return null;
   const construirBitacoraSupabase = (p) => {
     if (!p) return null;
     const loc = bitacoraLocal[p.codigo_rastreo] || {};

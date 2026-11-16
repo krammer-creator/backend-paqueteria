@@ -68,3 +68,8 @@ export function eliminarPersonal(idPersonal) {
     method: 'DELETE',
   });
 }
+export function limpiarPaquetesEntregadosApi() {
+  return request('/api/v1/paquetes/entregados', {
+    method: 'DELETE',
+  });
+}

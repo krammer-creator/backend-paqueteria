@@ -83,21 +83,94 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
   function respaldarYLimpiarEntregados() {
     const entregados = paquetes.filter((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO'));
-    
-    if (entregados.length > 0) {
-      console.log("Estructura real del paquete entregado:", entregados[0]);
-    }
-
     if (entregados.length === 0) {
       alert('No hay paquetes entregados para respaldar.');
       return;
     }
-    if (!window.confirm(`¿Deseas generar el reporte PDF y limpiar ${entregados.length} paquetes entregados?`)) {
+    if (!window.confirm(`¿Deseas generar el reporte PDF completo y limpiar ${entregados.length} paquetes entregados?`)) {
       return;
     }
     try {
       const w = window.open('', '_blank');
-      w.document.write(`<html><head><title>Reporte PDF</title><style>body{font-family:Arial;padding:20px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#f4f4f4}</style></head><body><h1>Respaldo de Paquetes Entregados</h1><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Destinatario</th><th>Teléfono</th><th>Estante</th><th>Estado</th></tr></thead><tbody>${entregados.map(p=>`<tr><td>${p.codigo_rastreo || p.codigo || p.id || 'N/A'}</td><td>${p.destinatario_nombre || p.nombre || p.cliente || 'N/A'}</td><td>${p.destinatario_telefono || p.telefono || p.celular || 'N/A'}</td><td>${p.ubicacion_estante || p.estante || 'N/A'}</td><td>${p.estado || 'N/A'}</td></tr>`).join('')}</tbody></table><script>window.onload=()=>window.print();</script></body></html>`);
+      w.document.write(`
+        <html>
+          <head>
+            <title>Reporte Completo de Respaldo - PUDO</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+              h1 { font-size: 20px; margin-bottom: 5px; }
+              .fecha { font-size: 12px; color: #666; margin-bottom: 20px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              th, td { border: 1px solid #cbd5e1; padding: 10px 8px; font-size: 11px; text-align: left; vertical-align: middle; }
+              th { background-color: #f1f5f9; font-weight: bold; }
+              .foto-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; }
+              .badge { display: inline-block; padding: 2px 6px; font-size: 10px; font-weight: bold; background: #dcfce7; color: #166534; border-radius: 4px; }
+            </style>
+          </head>
+          <body>
+            <h1>Respaldo Oficial de Paquetes Entregados</h1>
+            <div class="fecha">Fecha de emisión del respaldo: ${new Date().toLocaleString()} | Total registros: ${entregados.length}</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Evidencia</th>
+                  <th>Rastreo / Token</th>
+                  <th>Comprador (Destinatario)</th>
+                  <th>Vendedor / Remitente</th>
+                  <th>Estante / Slot</th>
+                  <th>Horarios (Recepción / Entrega)</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${entregados.map(p => {
+                  const loc = bitacoraLocal[p.codigo_rastreo] || {};
+                  const foto = p.foto_paquete || loc.fotoPaquete || '';
+                  const fechaRec = p.fecha_recepcion || p.fecha_ingreso || loc.fechaRecepcion || '---';
+                  const fechaEnt = p.fecha_entrega || loc.fechaEntrega || 'Registrada';
+                  const vendedorInfo = p.id_vendedor ? `ID: ${p.id_vendedor}` : (p.remitente_nombre || '---');
+                  
+                  return `
+                    <tr>
+                      <td style="text-align: center;">
+                        ${foto ? `<img src="${foto}" class="foto-img" />` : '<span style="color:#999;font-size:10px;">Sin foto</span>'}
+                      </td>
+                      <td>
+                        <strong>${p.codigo_rastreo || p.codigo || 'N/A'}</strong><br/>
+                        <span style="color:#d97706;font-family:monospace;">Token: ${p.token_retiro || '---'}</span>
+                      </td>
+                      <td>
+                        <strong>${p.destinatario_nombre || 'N/A'}</strong><br/>
+                        CI: ${p.destinatario_ci || '---'}<br/>
+                        Tel: ${p.destinatario_telefono || '---'}
+                      </td>
+                      <td>
+                        ${vendedorInfo}<br/>
+                        <span style="color:#666;font-size:10px;">${p.remitente_telefono || ''}</span>
+                      </td>
+                      <td>
+                        <span style="font-family:monospace;font-weight:bold;">${p.ubicacion_estante || 'E-01'}</span>
+                      </td>
+                      <td>
+                        <span style="color:#0284c7;">Rec: ${fechaRec}</span><br/>
+                        <span style="color:#16a34a;">Ent: ${fechaEnt}</span>
+                      </td>
+                      <td>
+                        <span class="badge">ENTREGADO</span>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+            <script>
+              window.onload = () => {
+                setTimeout(() => window.print(), 500);
+              };
+            </script>
+          </body>
+        </html>
+      `);
       w.document.close();
 
       const limpiarFn = typeof limpiarPaquetesEntregadosApi === 'function' ? limpiarPaquetesEntregadosApi() : Promise.resolve();

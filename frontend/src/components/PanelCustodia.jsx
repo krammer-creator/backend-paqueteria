@@ -77,6 +77,40 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
 
 
+        if (!window.confirm(`¿Deseas generar el reporte PDF y limpiar ${entregados.length} paquetes entregados?`)) {
+          return;
+        }
+        try {
+          const getVal = (p, keys) => {
+            for (const k of keys) {
+              if (p[k] !== undefined && p[k] !== null && String(p[k]).trim() !== '') return p[k];
+            }
+            return 'N/A';
+          };
+
+          const w = window.open('', '_blank');
+          w.document.write(`<html><head><title>Reporte PDF</title><style>body{font-family:Arial;padding:20px}table{width:100%%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#f4f4f4}</style></head><body><h1>Respaldo de Paquetes Entregados</h1><p>Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>Código</th><th>Destinatario</th><th>Teléfono</th><th>Estante</th><th>Estado</th></tr></thead><tbody>${entregados.map(p=>`<tr><td>${getVal(p, ['codigo', 'tracking', 'id', 'codigo_seguimiento'])}</td><td>${getVal(p, ['destinatario', 'nombre', 'cliente', 'nombre_destinatario'])}</td><td>${getVal(p, ['telefono', 'celular', 'whatsapp', 'fono'])}</td><td>${getVal(p, ['estante', 'ubicacion', 'casillero'])}</td><td>${getVal(p, ['estado'])}</td></tr>`).join('')}</tbody></table><script>window.onload=()=>window.print();</script></body></html>`);
+          w.document.close();
+
+          const apiFn = typeof limpiarPaquetesEntregadosApi === 'function' ? limpiarPaquetesEntregadosApi() : Promise.resolve();
+          apiFn.then(() => {
+            if (typeof cargarDatos === 'function') {
+              cargarDatos();
+            } else {
+              window.location.reload();
+            }
+          }).catch(err => {
+            console.error(err);
+            window.location.reload();
+          });
+        } catch (err) {
+          console.error(err);
+          alert('Error al procesar el respaldo');
+        }
+      }
+
+
+
   
     if (!window.confirm(`¿Deseas generar el reporte PDF y limpiar ${entregados.length} paquetes entregados?`)) {
       return;
@@ -1007,211 +1041,6 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
             {paquetes.some((p) => String(p.estado || '').trim().toUpperCase().includes('ENTREGADO')) && (
   <button
     type="button"
-    onClick={respaldarYLimpiarEntregados}
-    className="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-bold text-sm transition cursor-pointer"
-  >
-    📥 Respaldo PDF y Limpiar Entregados
-  </button>
-)}
-            {pendientesMigrar.length > 0 && (
-              <button
-                type="button"
-                onClick={migrarFotosAntiguas}
-                disabled={migrandoFotos}
-                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition cursor-pointer"
-              >
-                {migrandoFotos
-                  ? 'Subiendo fotos...'
-                  : `☁️ Subir ${pendientesMigrar.length} foto(s) a Supabase`}
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={cargarDatos}
-              disabled={cargando}
-              className="px-4 py-2.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-300 font-semibold text-sm transition cursor-pointer"
-            >
-              {cargando ? 'Actualizando...' : '↻ Actualizar Lista'}
-            </button>
-          </div>
-        </div>
-
-        {errorApi && (
-          <div className="p-4 rounded-xl bg-amber-950/50 border border-amber-500/40 text-amber-200 text-sm">
-            ⚠️ {errorApi}
-          </div>
-        )}
-
-        {mensajeOk && (
-          <div className="p-4 rounded-xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-200 text-sm">
-            ✅ {mensajeOk}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <form
-            onSubmit={handleRegistrar}
-            className="lg:col-span-2 bg-slate-900/70 border border-slate-800 p-6 rounded-2xl space-y-5"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-white">+ Recepcionar Nuevo Paquete</h2>
-              <span className="text-xs text-slate-400">Correlativos automáticos activos</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">
-                  {operadorActivo ? 'ID Turno (Bloqueado)' : 'ID Vendedor *'}
-                </label>
-                <input
-                  type="text"
-                  name="id_vendedor"
-                  value={operadorActivo ? operadorActivo.codigo : formulario.id_vendedor}
-                  onChange={handleChange}
-                  readOnly={Boolean(operadorActivo)}
-                  className={`w-full border rounded-xl px-3.5 py-2.5 font-mono font-semibold text-sm ${
-                    operadorActivo
-                      ? 'bg-slate-950/60 border-amber-500/50 text-amber-300 cursor-not-allowed'
-                      : 'bg-slate-950 border-slate-700 text-white'
-                  }`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Código Rastreo *</label>
-                <input
-                  type="text"
-                  name="codigo_rastreo"
-                  value={formulario.codigo_rastreo}
-                  readOnly
-                  className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sky-400 font-mono font-semibold text-sm cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Token Retiro *</label>
-                <input
-                  type="text"
-                  name="token_retiro"
-                  value={formulario.token_retiro}
-                  readOnly
-                  className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-3.5 py-2.5 text-emerald-400 font-mono font-semibold text-sm cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Estante *</label>
-                <select
-                  name="ubicacion_estante"
-                  value={formulario.ubicacion_estante}
-                  onChange={handleChange}
-                  className={`w-full bg-slate-950 border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none ${
-                    estanteLleno ? 'border-amber-500 text-amber-200' : 'border-slate-700'
-                  }`}
-                >
-                  {LISTA_ESTANTES.map((est) => {
-                    const cant = ocupacionPorEstante[est] || 0;
-                    const lleno = cant >= CAPACIDAD_MAX_ESTANTE;
-                    return (
-                      <option key={est} value={est}>
-                        {est} ({lleno ? `LLENO ${cant}/12` : `${cant}/12`})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-            </div>
-
-            {estanteLleno && (
-              <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-500/50 text-xs text-amber-200 flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  ⚠️ El estante <strong>{estanteActual}</strong> está lleno ({CAPACIDAD_MAX_ESTANTE}/{CAPACIDAD_MAX_ESTANTE}).{' '}
-                  {estanteSugerido ? (
-                    <>Te sugerimos usar el estante <strong>{estanteSugerido}</strong>.</>
-                  ) : (
-                    <>Todos los estantes están llenos.</>
-                  )}
-                </span>
-                {estanteSugerido && (
-                  <button
-                    type="button"
-                    onClick={() => setFormulario((prev) => ({ ...prev, ubicacion_estante: estanteSugerido }))}
-                    className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold cursor-pointer"
-                  >
-                    Cambiar a {estanteSugerido}
-                  </button>
-                )}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
-              <div>
-                <label className="block text-xs text-sky-300 font-semibold mb-1.5">
-                  WhatsApp de Quien Deja el Paquete (Bolivia +591) *
-                </label>
-                <div className="flex items-center bg-slate-950 border border-slate-700 focus-within:border-emerald-500 rounded-xl overflow-hidden">
-                  <span className="px-3.5 py-2.5 bg-slate-800 text-emerald-400 font-mono font-bold text-sm border-r border-slate-700 select-none">
-                    +591
-                  </span>
-                  <input
-                    type="tel"
-                    maxLength={8}
-                    required
-                    value={remitenteTelefono}
-                    onChange={(e) => setRemitenteTelefono(e.target.value.replace(/\D/g, ''))}
-                    placeholder="71234567"
-                    className="w-full bg-transparent px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">
-                  Nombre de Quien Deja / Tienda (Opcional)
-                </label>
-                <input
-                  type="text"
-                  value={remitenteNombre}
-                  onChange={(e) => setRemitenteNombre(e.target.value)}
-                  placeholder="Ej. Tienda Tech Bolivia / Juan Pérez"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Nombre Destinatario *</label>
-                <input
-                  type="text"
-                  name="destinatario_nombre"
-                  required
-                  value={formulario.destinatario_nombre}
-                  onChange={handleChange}
-                  placeholder="Ej. María Quispe"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">WhatsApp Destinatario *</label>
-                <div className="flex items-center bg-slate-950 border border-slate-700 rounded-xl overflow-hidden">
-                  <span className="px-3 py-2.5 bg-slate-800 text-slate-300 font-mono font-semibold text-xs border-r border-slate-700 select-none">
-                    +591
-                  </span>
-                  <input
-                    type="tel"
-                    maxLength={8}
-                    name="destinatario_telefono"
-                    required
-                    value={formulario.destinatario_telefono}
-                    onChange={(e) =>
-                      setFormulario((prev) => ({
-                        ...prev,
-                        destinatario_telefono: e.target.value.replace(/\D/g, ''),
-                      }))
-                    }
                     placeholder="76543210"
                     className="w-full bg-transparent px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none"
                   />

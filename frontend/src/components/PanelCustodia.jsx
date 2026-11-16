@@ -478,7 +478,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
         remitente_nombre: formulario.remitente_nombre.trim() || null,
         remitente_telefono: telRemLimpio || null,
         remitente_ci: ciRemitenteLimpio || null,
-        vendedor_ci: ciRemitenteLimpio || null, // Clave alternativa para máxima compatibilidad
+        vendedor_ci: ciRemitenteLimpio || null,
         vendedor_nombre: formulario.remitente_nombre.trim() || null,
         vendedor_telefono: telRemLimpio || null,
         foto_paquete: fotoPrevia || null,

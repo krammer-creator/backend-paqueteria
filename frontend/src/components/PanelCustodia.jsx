@@ -67,6 +67,11 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
   const [busqueda, setBusqueda] = useState('');
   const [fotoPrevia, setFotoPrevia] = useState(null);
 
+  // Campos del remitente (vendedor) que deja el paquete
+  const [remitenteNombre, setRemitenteNombre] = useState('');
+  const [remitenteTelefono, setRemitenteTelefono] = useState('');
+  const [remitenteCi, setRemitenteCi] = useState('');
+
   const [camaraActiva, setCamaraActiva] = useState(false);
   const [listaCamaras, setListaCamaras] = useState([]);
   const [camaraSeleccionadaId, setCamaraSeleccionadaId] = useState('');
@@ -91,9 +96,6 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
     id_vendedor: 1,
     codigo_rastreo: 'TRK-BO-001',
     token_retiro: '0001',
-    remitente_nombre: '',
-    remitente_telefono: '',
-    remitente_ci: '',
     destinatario_nombre: '',
     destinatario_telefono: '',
     destinatario_ci: '',
@@ -167,9 +169,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   const fechaRec = formatearFecha(p.fecha_recepcion || p.fecha_ingreso || loc.fechaRecepcion || '---');
                   const fechaEnt = formatearFecha(p.fecha_entrega || loc.fechaEntrega || 'Registrada');
                   
-                  const nombreVend = p.remitente_nombre || p.vendedor_nombre || loc.remitenteNombre || '---';
-                  const ciVend = p.remitente_ci || p.vendedor_ci || loc.remitenteCi || '---';
-                  const telVend = p.remitente_telefono || p.vendedor_telefono || loc.remitenteTelefono || '---';
+                  const nombreVend = p.remitente_nombre || loc.remitenteNombre || '---';
+                  const ciVend = p.remitente_ci || loc.remitenteCi || '---';
+                  const telVend = p.remitente_telefono || loc.remitenteTelefono || '---';
 
                   const opRecibe = p.recibido_por || loc.recibidoPor || 'DUEÑO';
                   const opEntrega = p.entregado_por || loc.entregadoPor || 'DUEÑO';
@@ -464,9 +466,8 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       let primerSlotLibre = 0;
       while (ocupadosSlots.has(primerSlotLibre) && primerSlotLibre < 12) primerSlotLibre++;
 
-      const telRemLimpio = String(formulario.remitente_telefono || '').replace(/\D/g, '');
+      const telRemLimpio = remitenteTelefono.replace(/\D/g, '');
       const codigoOperador = operadorActivo?.codigo || 'DUEÑO';
-      const ciRemitenteLimpio = String(formulario.remitente_ci || '').trim();
 
       const payload = {
         ...formulario,
@@ -475,12 +476,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
         monto_producto: parseFloat(formulario.monto_producto) || 0,
         fecha_limite: new Date(formulario.fecha_limite).toISOString(),
         recibido_por: codigoOperador,
-        remitente_nombre: formulario.remitente_nombre.trim() || null,
+        remitente_nombre: remitenteNombre.trim() || null,
         remitente_telefono: telRemLimpio || null,
-        remitente_ci: ciRemitenteLimpio || null,
-        vendedor_ci: ciRemitenteLimpio || null,
-        vendedor_nombre: formulario.remitente_nombre.trim() || null,
-        vendedor_telefono: telRemLimpio || null,
+        remitente_ci: remitenteCi.trim() || null,
         foto_paquete: fotoPrevia || null,
         slot_3d: primerSlotLibre < 12 ? primerSlotLibre : 0,
       };
@@ -503,13 +501,13 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
       setMensajeOk(`Paquete ${formulario.codigo_rastreo} registrado con éxito por [${codigoOperador}].`);
       setFotoPrevia(null);
+      setRemitenteNombre('');
+      setRemitenteTelefono('');
+      setRemitenteCi('');
       if (inputFotoRef.current) inputFotoRef.current.value = '';
 
       setFormulario((prev) => ({
         ...prev,
-        remitente_nombre: '',
-        remitente_telefono: '',
-        remitente_ci: '',
         destinatario_nombre: '',
         destinatario_telefono: '',
         destinatario_ci: '',
@@ -545,9 +543,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       fechaRecepcion: p.fecha_recepcion || p.fecha_ingreso || loc.fechaRecepcion,
       fechaEntrega: p.fecha_entrega || loc.fechaEntrega || null,
       fotoPaquete: p.foto_paquete || loc.fotoPaquete || null,
-      remitenteNombre: p.remitente_nombre || p.vendedor_nombre || loc.remitenteNombre || '',
-      remitenteTelefono: p.remitente_telefono || p.vendedor_telefono || loc.remitenteTelefono || '',
-      remitenteCi: p.remitente_ci || p.vendedor_ci || loc.remitenteCi || '',
+      remitenteNombre: p.remitente_nombre || loc.remitenteNombre || '',
+      remitenteTelefono: p.remitente_telefono || loc.remitenteTelefono || '',
+      remitenteCi: p.remitente_ci || loc.remitenteCi || '',
       diasRetraso: moraInfo.diasRetraso,
       montoMora: moraInfo.montoMora,
       vencido: moraInfo.vencido,
@@ -562,8 +560,8 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
       String(p.destinatario_nombre || '').toLowerCase().includes(q) ||
       String(p.destinatario_ci || '').toLowerCase().includes(q) ||
       String(p.token_retiro || '').toLowerCase().includes(q) ||
-      String(p.remitente_ci || p.vendedor_ci || '').toLowerCase().includes(q) ||
-      String(p.remitente_nombre || p.vendedor_nombre || '').toLowerCase().includes(q)
+      String(p.remitente_ci || '').toLowerCase().includes(q) ||
+      String(p.remitente_nombre || '').toLowerCase().includes(q)
     );
   });
 
@@ -724,10 +722,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   <label className="block text-xs text-slate-400 mb-1.5">Nombre Vendedor *</label>
                   <input
                     type="text"
-                    name="remitente_nombre"
                     required
-                    value={formulario.remitente_nombre}
-                    onChange={handleChange}
+                    value={remitenteNombre}
+                    onChange={(e) => setRemitenteNombre(e.target.value)}
                     placeholder="Nombre del vendedor"
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
                   />
@@ -736,10 +733,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   <label className="block text-xs text-slate-400 mb-1.5">Celular Vendedor (WhatsApp) *</label>
                   <input
                     type="text"
-                    name="remitente_telefono"
                     required
-                    value={formulario.remitente_telefono}
-                    onChange={handleChange}
+                    value={remitenteTelefono}
+                    onChange={(e) => setRemitenteTelefono(e.target.value)}
                     placeholder="76543210"
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
                   />
@@ -748,10 +744,9 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                   <label className="block text-xs text-slate-400 mb-1.5">CI Vendedor *</label>
                   <input
                     type="text"
-                    name="remitente_ci"
                     required
-                    value={formulario.remitente_ci}
-                    onChange={handleChange}
+                    value={remitenteCi}
+                    onChange={(e) => setRemitenteCi(e.target.value)}
                     placeholder="Ej. 1234567 LP"
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white"
                   />
@@ -1038,10 +1033,8 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
 
                     const locFila = bitacoraLocal[p.codigo_rastreo] || {};
                     const fotoMostrar = p.foto_paquete || locFila.fotoPaquete;
-                    
-                    const nombreVendedor = p.remitente_nombre || p.vendedor_nombre || loc.remitenteNombre || '---';
-                    const ciVendedor = p.remitente_ci || p.vendedor_ci || loc.remitenteCi || '---';
-                    const telVendedor = p.remitente_telefono || p.vendedor_telefono || loc.remitenteTelefono || '---';
+                    const ciVendedor = p.remitente_ci || locFila.remitenteCi || '---';
+                    const telVendedor = p.remitente_telefono || locFila.remitenteTelefono || '---';
 
                     const rec = p.recibido_por || locFila.recibidoPor || '---';
                     const ent = p.entregado_por || locFila.entregadoPor || (entregado ? '---' : 'Pendiente');
@@ -1079,7 +1072,7 @@ export default function PanelCustodia({ paquetesIniciales = [], onVolver3D, onVo
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-white">{nombreVendedor}</div>
+                          <div className="font-semibold text-white">{p.remitente_nombre || '---'}</div>
                           <div className="text-xs text-slate-400">
                             CI: {ciVendedor} • Tel: {telVendedor}
                           </div>
